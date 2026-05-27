@@ -142,6 +142,7 @@ export const GameEvents = {
   SCENE_ENTER: 'scene:enter',
   SCENE_EXIT: 'scene:exit',
   SCENE_CHANGE: 'scene:change',
+  SCENE_LOAD_REQUEST: 'scene:loadRequest',
 
   // 玩家事件
   PLAYER_LEVEL_UP: 'player:levelUp',

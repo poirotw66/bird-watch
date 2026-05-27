@@ -24,6 +24,9 @@ import { MapPortal } from '@/components/MapPortal';
 import { MapUI } from '@/components/MapUI';
 import { eventBus, GameEvents } from '@/core/EventSystem';
 import type { SimpleBirdData } from '@/data/simpleBirds';
+import { getViewport } from '@/utils/viewport';
+import { drawPanel, drawChip, roundRectPath } from '@/utils/canvasUi';
+import { theme } from '@/utils/uiTheme';
 
 /**
  * UI 組件 - 顯示遊戲資訊
@@ -37,49 +40,46 @@ class UIComponent extends Component {
     try {
       const player = gameState.getPlayer();
       if (!player) {
-        // 如果沒有玩家，顯示載入中
-        ctx.save();
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(10, 10, 300, 100);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '16px monospace';
-        ctx.fillText('載入中...', 20, 60);
-        ctx.restore();
+        drawPanel(ctx, 10, 10, 220, 80, { title: '載入中' });
         return;
       }
 
       const stats = pokedexSystem.getStats();
       const questStats = questSystem.getQuestStats();
       const achievementStats = achievementSystem.getAchievementStats();
+      const { width: vw } = getViewport(ctx);
+      const panelW = Math.min(300, vw - 24);
+      const x = 12;
+      const y = 12;
+      const h = 188;
 
-    ctx.save();
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(10, 10, 300, 200);
+      drawPanel(ctx, x, y, panelW, h, { title: '賞鳥紀錄' });
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '16px monospace';
-    let y = 35;
-
-    // 玩家資訊
-    ctx.fillText(`玩家: ${player.getData().profile.name}`, 20, y);
-    y += 25;
-    ctx.fillText(`等級: ${player.getData().progress.level}`, 20, y);
-    y += 25;
-    ctx.fillText(`經驗: ${player.getData().progress.experience}/${player.getData().progress.experienceToNextLevel}`, 20, y);
-    y += 25;
-
-    // 圖鑑統計
-    ctx.fillText(`圖鑑: ${stats.unlocked}/${stats.total} (${stats.completionRate.toFixed(1)}%)`, 20, y);
-    y += 25;
-
-    // 任務統計
-    ctx.fillText(`任務: ${questStats.completed}/${questStats.total}`, 20, y);
-    y += 25;
-
-    // 成就統計
-    ctx.fillText(`成就: ${achievementStats.unlocked}/${achievementStats.total}`, 20, y);
-
-      ctx.restore();
+      ctx.fillStyle = theme.text;
+      ctx.font = `14px ${theme.font}`;
+      ctx.textAlign = 'left';
+      let ly = y + 52;
+      const lx = x + 16;
+      const data = player.getData();
+      ctx.fillText(`${data.profile.name} · Lv.${data.progress.level}`, lx, ly);
+      ly += 22;
+      const expPct =
+        data.progress.experience / Math.max(1, data.progress.experienceToNextLevel);
+      ctx.fillStyle = theme.textMuted;
+      ctx.fillText('經驗', lx, ly);
+      ly += 8;
+      const barW = panelW - 32;
+      ctx.fillStyle = 'rgba(255,255,255,0.1)';
+      roundRectPath(ctx, lx, ly, barW, 8, 4);
+      ctx.fill();
+      ctx.fillStyle = theme.accent;
+      roundRectPath(ctx, lx, ly, barW * Math.min(1, expPct), 8, 4);
+      ctx.fill();
+      ly += 22;
+      ctx.fillStyle = theme.text;
+      ctx.fillText(`圖鑑 ${stats.unlocked}/${stats.total}`, lx, ly);
+      ly += 20;
+      ctx.fillText(`任務 ${questStats.completed}/${questStats.total} · 成就 ${achievementStats.unlocked}/${achievementStats.total}`, lx, ly);
     } catch (error) {
       console.error('UI 渲染錯誤:', error);
     }
@@ -87,80 +87,69 @@ class UIComponent extends Component {
 }
 
 /**
- * 控制說明組件
+ * Bottom HUD: quick tips always visible on screen.
  */
-class ControlsComponent extends Component {
-  public update(_deltaTime: number): void {
-    // 控制說明不需要更新邏輯
-  }
+class GameplayHudBar extends Component {
+  public update(_deltaTime: number): void {}
 
   public render(ctx: CanvasRenderingContext2D): void {
-    ctx.save();
-    
-    const x = ctx.canvas.width - 310;
-    const y = 10;
-    
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(x, y, 300, 180);
+    const { width: vw, height: vh } = getViewport(ctx);
+    const barH = 44;
+    const y = vh - barH - 10;
+    const x = 10;
+    const w = vw - 20;
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '14px monospace';
-    
-    let textY = y + 25;
-    ctx.fillText('遊戲控制:', x + 10, textY);
-    textY += 25;
-    ctx.fillText('WASD/方向鍵 - 移動', x + 10, textY);
-    textY += 25;
-    ctx.fillText('E - 傳送/互動', x + 10, textY);
-    textY += 25;
-    ctx.fillText('滑鼠左鍵/F - 觀察', x + 10, textY);
-    textY += 25;
-    ctx.fillText('C - 拍照', x + 10, textY);
-    textY += 25;
-    ctx.fillText('P - 圖鑑', x + 10, textY);
-    textY += 25;
-    ctx.fillText('Q - 任務', x + 10, textY);
-    textY += 25;
-    ctx.fillText('M - 地圖', x + 10, textY);
-
-    ctx.restore();
+    drawPanel(ctx, x, y, w, barH);
+    ctx.fillStyle = theme.textMuted;
+    ctx.font = `13px ${theme.font}`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    let cx = x + 14;
+    cx += drawChip(ctx, 'F 觀察', cx, y + 10);
+    cx += drawChip(ctx, 'C 拍照', cx, y + 10);
+    cx += drawChip(ctx, 'P 圖鑑', cx, y + 10);
+    cx += drawChip(ctx, 'Q 任務', cx, y + 10);
+    cx += drawChip(ctx, 'M 地圖', cx, y + 10);
+    drawChip(ctx, 'E 傳送', cx, y + 10);
   }
 }
 
 /**
- * 系統狀態組件
+ * Full control reference (top-right).
  */
-class SystemStatusComponent extends Component {
-  public update(_deltaTime: number): void {
-    // 系統狀態不需要更新邏輯
-  }
+class ControlsComponent extends Component {
+  public update(_deltaTime: number): void {}
 
   public render(ctx: CanvasRenderingContext2D): void {
-    ctx.save();
-    
-    const x = 10;
-    const y = ctx.canvas.height - 150;
-    
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(x, y, 300, 140);
-
-    ctx.fillStyle = '#4CAF50';
-    ctx.font = '14px monospace';
-    
-    let textY = y + 25;
-    ctx.fillText('系統狀態:', x + 10, textY);
-    
-    ctx.fillStyle = '#ffffff';
-    textY += 25;
-    ctx.fillText('✓ 遊戲引擎', x + 10, textY);
-    textY += 25;
-    ctx.fillText('✓ 任務系統', x + 10, textY);
-    textY += 25;
-    ctx.fillText('✓ 成就系統', x + 10, textY);
-    textY += 25;
-    ctx.fillText('✓ 圖鑑系統', x + 10, textY);
-
-    ctx.restore();
+    const { width: vw } = getViewport(ctx);
+    const panelW = Math.min(300, vw - 24);
+    const x = vw - panelW - 12;
+    const y = 12;
+    const line = 22;
+    const lines = [
+      '【操作說明】',
+      '移動：W A S D 或 方向鍵',
+      '觀察：按住 F 或 滑鼠左鍵',
+      '      對準鳥類，放開即結束',
+      '      觀察越久，識別率越高',
+      '拍照：C（需靠近鳥類）',
+      '圖鑑：P（已解鎖鳥種與照片）',
+      '任務：Q',
+      '地圖：M（小地圖／世界地圖）',
+      '傳送：E（金色傳送點旁）',
+      '暫停：Esc',
+    ];
+    const panelH = 16 + lines.length * line;
+    drawPanel(ctx, x, y, panelW, panelH, { title: '操作說明' });
+    ctx.textAlign = 'left';
+    let textY = y + 52;
+    for (const text of lines) {
+      if (text.startsWith('【')) continue;
+      ctx.fillStyle = theme.text;
+      ctx.font = `14px ${theme.font}`;
+      ctx.fillText(text, x + 16, textY);
+      textY += line;
+    }
   }
 }
 
@@ -170,7 +159,7 @@ class SystemStatusComponent extends Component {
 export class GameScene extends Scene {
   private uiObject: GameObject | null = null;
   private controlsObject: GameObject | null = null;
-  private statusObject: GameObject | null = null;
+  private hudBarObject: GameObject | null = null;
   private playerObject: GameObject | null = null;
   private birdObjects: GameObject[] = [];
   private observationUIObject: GameObject | null = null;
@@ -182,6 +171,7 @@ export class GameScene extends Scene {
   private mapUIObject: GameObject | null = null;
   private mapSystem: MapSystem;
   private mapRenderer: MapRenderer | null = null;
+  private mapPortal: MapPortal | null = null;
   private photoKeyWasDown: boolean = false;
 
   constructor() {
@@ -189,6 +179,13 @@ export class GameScene extends Scene {
     this.mapSystem = MapSystem.getInstance();
     eventBus.on('area:changed', () => {
       this.applyPanoramicCamera();
+      this.clearBirds();
+      this.spawnBirds();
+    });
+    eventBus.on('player:teleport', (data: { position: { x: number; y: number } }) => {
+      if (!this.playerObject) return;
+      this.playerObject.position.x = data.position.x;
+      this.playerObject.position.y = data.position.y;
     });
   }
 
@@ -225,7 +222,8 @@ export class GameScene extends Scene {
 
     // 創建地圖傳送門組件
     this.mapPortalObject = new GameObject(0, 0);
-    this.mapPortalObject.addComponent(new MapPortal());
+    this.mapPortal = new MapPortal();
+    this.mapPortalObject.addComponent(this.mapPortal);
     this.addGameObject(this.mapPortalObject);
     console.log('✅ 地圖傳送門已創建');
 
@@ -268,10 +266,9 @@ export class GameScene extends Scene {
     this.controlsObject.addComponent(new ControlsComponent());
     this.addGameObject(this.controlsObject);
 
-    // 創建系統狀態物件
-    this.statusObject = new GameObject(0, 0);
-    this.statusObject.addComponent(new SystemStatusComponent());
-    this.addGameObject(this.statusObject);
+    this.hudBarObject = new GameObject(0, 0);
+    this.hudBarObject.addComponent(new GameplayHudBar());
+    this.addGameObject(this.hudBarObject);
 
     const screenUiObjects = [
       this.observationUIObject,
@@ -281,7 +278,7 @@ export class GameScene extends Scene {
       this.mapUIObject,
       this.uiObject,
       this.controlsObject,
-      this.statusObject,
+      this.hudBarObject,
     ];
     for (const obj of screenUiObjects) {
       if (obj) {
@@ -384,8 +381,18 @@ export class GameScene extends Scene {
   }
 
   public update(deltaTime: number): void {
+    if (this.mapPortal && this.playerObject) {
+      this.mapPortal.setPlayerPosition(this.playerObject.position);
+    }
     super.update(deltaTime);
     this.handleObservation();
+  }
+
+  private clearBirds(): void {
+    for (const bird of this.birdObjects) {
+      bird.destroy();
+    }
+    this.birdObjects = [];
   }
 
   /**

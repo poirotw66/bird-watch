@@ -23,6 +23,7 @@ export class Engine {
   private showPerformanceHUD: boolean = false;
   private viewportWidth: number = 0;
   private viewportHeight: number = 0;
+  private onSceneLoadRequest: ((data?: any) => void) | null = null;
 
   constructor(canvasId: string) {
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -86,6 +87,14 @@ export class Engine {
         this.currentScene.onViewportResize(this.viewportWidth, this.viewportHeight);
       }
     });
+
+    // Allow scenes to request another scene via the event bus.
+    this.onSceneLoadRequest = (data?: any) => {
+      const requestedScene = (data?.scene as Scene | undefined) ?? undefined;
+      if (!requestedScene) return;
+      this.loadScene(requestedScene);
+    };
+    eventBus.on(GameEvents.SCENE_LOAD_REQUEST, this.onSceneLoadRequest);
 
     // 頁面可見性改變時暫停/恢復遊戲
     document.addEventListener('visibilitychange', () => {
@@ -322,6 +331,10 @@ export class Engine {
       this.currentScene = null;
     }
     // 移除事件監聽器
+    if (this.onSceneLoadRequest) {
+      eventBus.off(GameEvents.SCENE_LOAD_REQUEST, this.onSceneLoadRequest);
+      this.onSceneLoadRequest = null;
+    }
     window.removeEventListener('resize', () => this.setupCanvas());
   }
 }

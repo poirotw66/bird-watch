@@ -2,6 +2,7 @@ import { Component } from '../core/Component';
 import { QuestSystem } from '../systems/QuestSystem';
 import { InputManager } from '../core/InputManager';
 import { EventSystem, GameEvents } from '../core/EventSystem';
+import { getViewport } from '../utils/viewport';
 
 /**
  * 任務 UI 組件
@@ -173,19 +174,22 @@ export class QuestUI extends Component {
     }
 
     // 半透明背景
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    const { width: vw, height: vh } = getViewport(ctx);
+    const panelWidth = Math.min(this.panelWidth, vw - 40);
+    const panelHeight = Math.min(this.panelHeight, vh - 40);
 
-    // 計算面板位置（置中）
-    const x = (ctx.canvas.width - this.panelWidth) / 2;
-    const y = (ctx.canvas.height - this.panelHeight) / 2;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, vw, vh);
+
+    const x = (vw - panelWidth) / 2;
+    const y = (vh - panelHeight) / 2;
 
     // 繪製面板背景
     ctx.fillStyle = 'rgba(40, 40, 40, 0.95)';
-    ctx.fillRect(x, y, this.panelWidth, this.panelHeight);
+    ctx.fillRect(x, y, panelWidth, panelHeight);
     ctx.strokeStyle = '#4a9eff';
     ctx.lineWidth = 3;
-    ctx.strokeRect(x, y, this.panelWidth, this.panelHeight);
+    ctx.strokeRect(x, y, panelWidth, panelHeight);
 
     // 標題
     ctx.fillStyle = '#ffffff';
@@ -220,17 +224,8 @@ export class QuestUI extends Component {
   /**
    * 渲染提示
    */
-  private renderHint(ctx: CanvasRenderingContext2D): void {
-    const stats = this.questSystem.getQuestStats();
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(10, ctx.canvas.height - 100, 200, 40);
-    
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '14px Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText('按 Q 開啟任務', 20, ctx.canvas.height - 80);
-    ctx.fillStyle = '#4a9eff';
-    ctx.fillText(`${stats.active}/${stats.total} 進行中`, 20, ctx.canvas.height - 65);
+  private renderHint(_ctx: CanvasRenderingContext2D): void {
+    // Hint shown in GameScene HUD bar.
   }
 
   /**

@@ -1,8 +1,9 @@
 import { Component } from '../core/Component';
-import { Camera } from '../core/Camera';
 import { MapArea } from '../data/maps';
 import { MapSystem } from '../systems/MapSystem';
 import { eventBus } from '../core/EventSystem';
+import { theme } from '../utils/uiTheme';
+import { roundRectPath } from '../utils/canvasUi';
 
 /**
  * Renders the current map area in world space (Scene camera transform applies).
@@ -10,7 +11,7 @@ import { eventBus } from '../core/EventSystem';
 export class MapRenderer extends Component {
   private mapSystem: MapSystem;
   private currentArea: MapArea;
-  private boundCamera: Camera | null = null;
+  private time: number = 0;
 
   constructor() {
     super();
@@ -19,8 +20,8 @@ export class MapRenderer extends Component {
     this.setupEventListeners();
   }
 
-  public bindCamera(camera: Camera): void {
-    this.boundCamera = camera;
+  public bindCamera(_camera: unknown): void {
+    // Reserved for future culling.
   }
 
   private setupEventListeners(): void {
@@ -29,57 +30,47 @@ export class MapRenderer extends Component {
     });
   }
 
-  public update(_deltaTime: number): void {
+  public update(deltaTime: number): void {
     this.currentArea = this.mapSystem.getCurrentArea();
+    this.time += deltaTime;
   }
 
-  public setCanvasSize(_width: number, _height: number): void {
-    // Reserved for future viewport culling.
-  }
+  public setCanvasSize(_width: number, _height: number): void {}
 
   public render(ctx: CanvasRenderingContext2D): void {
-    const camera = this.boundCamera ?? this.gameObject?.scene?.camera;
-    if (!camera) {
-      this.renderWorldFallback(ctx);
-      return;
-    }
-
-    this.renderBackground(ctx);
+    this.renderSky(ctx);
     this.renderGround(ctx);
     this.renderObjects(ctx);
     this.renderConnections(ctx);
+    this.renderVignette(ctx);
   }
 
-  private renderWorldFallback(ctx: CanvasRenderingContext2D): void {
-    ctx.fillStyle = this.currentArea.backgroundColor;
-    ctx.fillRect(0, 0, this.currentArea.width, this.currentArea.height);
-    ctx.fillStyle = this.currentArea.groundColor;
-    ctx.fillRect(0, 0, this.currentArea.width, this.currentArea.height);
-  }
-
-  private renderBackground(ctx: CanvasRenderingContext2D): void {
-    ctx.fillStyle = this.currentArea.backgroundColor;
-    ctx.fillRect(0, 0, this.currentArea.width, this.currentArea.height);
+  private renderSky(ctx: CanvasRenderingContext2D): void {
+    const w = this.currentArea.width;
+    const h = this.currentArea.height;
+    const grad = ctx.createLinearGradient(0, 0, 0, h * 0.55);
+    grad.addColorStop(0, theme.skyTop);
+    grad.addColorStop(1, theme.skyBottom);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
   }
 
   private renderGround(ctx: CanvasRenderingContext2D): void {
-    ctx.fillStyle = this.currentArea.groundColor;
-    ctx.fillRect(0, 0, this.currentArea.width, this.currentArea.height);
+    const w = this.currentArea.width;
+    const h = this.currentArea.height;
+    const groundGrad = ctx.createLinearGradient(0, h * 0.35, 0, h);
+    groundGrad.addColorStop(0, this.currentArea.groundColor);
+    groundGrad.addColorStop(1, '#3d6b32');
+    ctx.fillStyle = groundGrad;
+    ctx.fillRect(0, h * 0.32, w, h);
 
-    const gridSize = 50;
-    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
-    ctx.lineWidth = 1;
-    for (let x = 0; x <= this.currentArea.width; x += gridSize) {
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    for (let i = 0; i < 120; i++) {
+      const px = (i * 97) % w;
+      const py = h * 0.4 + ((i * 53) % Math.floor(h * 0.6));
       ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, this.currentArea.height);
-      ctx.stroke();
-    }
-    for (let y = 0; y <= this.currentArea.height; y += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(this.currentArea.width, y);
-      ctx.stroke();
+      ctx.arc(px, py, 1.2 + (i % 3), 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 
@@ -90,16 +81,13 @@ export class MapRenderer extends Component {
           this.renderTree(ctx, obj.x, obj.y, obj.width, obj.height);
           break;
         case 'water':
-          ctx.fillStyle = 'rgba(30, 120, 200, 0.55)';
-          ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+          this.renderWater(ctx, obj.x, obj.y, obj.width, obj.height);
           break;
         case 'grass':
-          ctx.fillStyle = 'rgba(60, 140, 60, 0.45)';
-          ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+          this.renderGrassPatch(ctx, obj.x, obj.y, obj.width, obj.height);
           break;
         case 'rock':
-          ctx.fillStyle = '#6b6b6b';
-          ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+          this.renderRock(ctx, obj.x, obj.y, obj.width, obj.height);
           break;
       }
     });
@@ -112,25 +100,116 @@ export class MapRenderer extends Component {
     width: number,
     height: number,
   ): void {
-    ctx.fillStyle = '#5d4037';
-    ctx.fillRect(x + width * 0.4, y + height * 0.5, width * 0.2, height * 0.5);
-    ctx.fillStyle = '#2e7d32';
+    const cx = x + width / 2;
+    const baseY = y + height;
+    ctx.fillStyle = 'rgba(0,0,0,0.15)';
     ctx.beginPath();
-    ctx.arc(x + width / 2, y + height * 0.35, width * 0.45, 0, Math.PI * 2);
+    ctx.ellipse(cx, baseY - 4, width * 0.35, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    const trunkW = width * 0.18;
+    const trunkGrad = ctx.createLinearGradient(x, y, x + width, y);
+    trunkGrad.addColorStop(0, '#4a3728');
+    trunkGrad.addColorStop(1, '#6d4c35');
+    ctx.fillStyle = trunkGrad;
+    ctx.fillRect(cx - trunkW / 2, y + height * 0.45, trunkW, height * 0.55);
+
+    const foliageGrad = ctx.createRadialGradient(cx, y + height * 0.35, 4, cx, y + height * 0.35, width * 0.5);
+    foliageGrad.addColorStop(0, '#5cab4a');
+    foliageGrad.addColorStop(1, '#2d6b28');
+    ctx.fillStyle = foliageGrad;
+    ctx.beginPath();
+    ctx.arc(cx, y + height * 0.32, width * 0.42, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx - width * 0.2, y + height * 0.38, width * 0.28, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx + width * 0.18, y + height * 0.4, width * 0.26, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  private renderWater(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): void {
+    const wave = Math.sin(this.time * 2 + x * 0.02) * 3;
+    const g = ctx.createLinearGradient(x, y, x, y + height);
+    g.addColorStop(0, 'rgba(70, 160, 220, 0.75)');
+    g.addColorStop(1, 'rgba(35, 90, 140, 0.85)');
+    ctx.fillStyle = g;
+    roundRectPath(ctx, x, y + wave, width, height, 12);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  private renderGrassPatch(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): void {
+    ctx.fillStyle = 'rgba(90, 160, 70, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(x + width / 2, y + height / 2, width / 2, height / 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  private renderRock(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): void {
+    ctx.fillStyle = '#7a7f78';
+    ctx.beginPath();
+    ctx.ellipse(x + width / 2, y + height / 2, width / 2, height / 2, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.beginPath();
+    ctx.ellipse(x + width * 0.35, y + height * 0.35, width * 0.15, height * 0.12, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
   private renderConnections(ctx: CanvasRenderingContext2D): void {
-    ctx.fillStyle = 'rgba(255, 215, 0, 0.85)';
+    const pulse = 0.85 + Math.sin(this.time * 4) * 0.15;
     this.currentArea.connections.forEach((conn) => {
+      const { x, y } = conn.position;
+      ctx.fillStyle = `rgba(232, 184, 109, ${0.25 * pulse})`;
       ctx.beginPath();
-      ctx.arc(conn.position.x, conn.position.y, 12, 0, Math.PI * 2);
+      ctx.arc(x, y, 22, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#222';
-      ctx.font = '11px Arial';
+
+      const ring = ctx.createRadialGradient(x, y, 4, x, y, 14);
+      ring.addColorStop(0, '#fff4d6');
+      ring.addColorStop(1, '#c9a227');
+      ctx.fillStyle = ring;
+      ctx.beginPath();
+      ctx.arc(x, y, 14, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#2a3d2e';
+      ctx.font = `bold 11px ${theme.font}`;
       ctx.textAlign = 'center';
-      ctx.fillText(conn.direction[0].toUpperCase(), conn.position.x, conn.position.y + 4);
-      ctx.fillStyle = 'rgba(255, 215, 0, 0.85)';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('E', x, y);
     });
+  }
+
+  private renderVignette(ctx: CanvasRenderingContext2D): void {
+    const w = this.currentArea.width;
+    const h = this.currentArea.height;
+    const v = ctx.createRadialGradient(w / 2, h / 2, h * 0.25, w / 2, h / 2, h * 0.85);
+    v.addColorStop(0, 'rgba(0,0,0,0)');
+    v.addColorStop(1, 'rgba(10,20,15,0.12)');
+    ctx.fillStyle = v;
+    ctx.fillRect(0, 0, w, h);
   }
 }

@@ -1,6 +1,6 @@
 
 import { Engine } from '@/core/Engine';
-import { GameScene } from '@/scenes/GameScene';
+import { HomeScene } from '@/scenes/HomeScene';
 import { eventBus, GameEvents } from '@/core/EventSystem';
 import { GameState } from '@/core/GameState';
 import { birdImageLoader } from '@/utils/birdImageLoader';
@@ -59,10 +59,10 @@ class Game {
 
       // 載入遊戲場景
       try {
-        const gameScene = new GameScene();
-        console.log('✅ 遊戲場景創建成功');
-        
-        this.engine.loadScene(gameScene);
+        const homeScene = new HomeScene();
+        console.log('✅ 首頁場景創建成功');
+
+        this.engine.loadScene(homeScene);
         console.log('✅ 場景載入完成');
       } catch (error) {
         console.error('❌ 場景載入失敗:', error);

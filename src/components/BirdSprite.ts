@@ -1,9 +1,11 @@
 import { Component } from '@/core/Component';
 import { SimpleBirdData } from '@/data/simpleBirds';
 import { birdImageLoader } from '@/utils/birdImageLoader';
+import { drawSoftShadow, roundRectPath } from '@/utils/canvasUi';
+import { theme } from '@/utils/uiTheme';
 
 /**
- * Bird sprite: draws catalog photo when loaded, otherwise a simple placeholder.
+ * Bird sprite with photo, shadow, and name plate.
  */
 export class BirdSprite extends Component {
   private birdData: SimpleBirdData;
@@ -12,7 +14,7 @@ export class BirdSprite extends Component {
   private flightPath: { x: number; y: number }[] = [];
   private currentPathIndex: number = 0;
   private speed: number = 50;
-  private detectionRadius: number = 100;
+  private detectionRadius: number = 120;
   private initialized: boolean = false;
 
   constructor(birdData: SimpleBirdData) {
@@ -50,8 +52,7 @@ export class BirdSprite extends Component {
   public isPlayerNearby(playerX: number, playerY: number): boolean {
     const dx = playerX - this.gameObject.position.x;
     const dy = playerY - this.gameObject.position.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    return distance < this.detectionRadius;
+    return Math.hypot(dx, dy) < this.detectionRadius;
   }
 
   public update(deltaTime: number): void {
@@ -63,7 +64,7 @@ export class BirdSprite extends Component {
       const target = this.flightPath[this.currentPathIndex];
       const dx = target.x - this.gameObject.position.x;
       const dy = target.y - this.gameObject.position.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
+      const distance = Math.hypot(dx, dy);
 
       if (distance < 5) {
         this.currentPathIndex = (this.currentPathIndex + 1) % this.flightPath.length;
@@ -80,53 +81,67 @@ export class BirdSprite extends Component {
     }
   }
 
-  private drawPlaceholder(ctx: CanvasRenderingContext2D, x: number, y: number, size: number): void {
-    let color = '#8BC34A';
+  private rarityAccent(): string {
     switch (this.birdData.rarity) {
       case 'uncommon':
-        color = '#2196F3';
-        break;
+        return '#6eb5ff';
       case 'rare':
-        color = '#9C27B0';
-        break;
+        return '#c49bff';
       case 'legendary':
-        color = '#FF9800';
-        break;
+        return '#ffc266';
+      default:
+        return theme.accent;
     }
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.ellipse(x, y, size, size * 0.7, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(x + size * 0.5, y - size * 0.3, size * 0.5, 0, Math.PI * 2);
-    ctx.fill();
   }
 
   public render(ctx: CanvasRenderingContext2D): void {
-    ctx.save();
-
-    const x = 0;
-    const y = 0;
-    const displaySize = Math.max(28, Math.min(56, this.birdData.size * 2));
+    const bob = Math.sin(this.animationTime * 3) * 2;
+    const displaySize = Math.max(36, Math.min(64, this.birdData.size * 2.2));
     const photo = birdImageLoader.getMedium(this.birdData.id);
 
+    drawSoftShadow(ctx, 0, 12, displaySize * 0.45, 6);
+
+    ctx.save();
+    ctx.translate(0, bob);
+
+    const accent = this.rarityAccent();
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, displaySize / 2 + 4, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(0, 0, displaySize / 2, 0, Math.PI * 2);
+    ctx.clip();
     if (photo) {
-      const w = displaySize;
-      const h = displaySize;
-      ctx.drawImage(photo, x - w / 2, y - h / 2, w, h);
+      ctx.drawImage(photo, -displaySize / 2, -displaySize / 2, displaySize, displaySize);
     } else {
-      const size = Math.max(8, this.birdData.size / 3);
-      this.drawPlaceholder(ctx, x, y, size);
+      ctx.fillStyle = accent;
+      ctx.globalAlpha = 0.35;
+      ctx.fill();
+      ctx.globalAlpha = 1;
     }
+    ctx.restore();
 
     if (this.state !== 'flying') {
-      ctx.fillStyle = '#ffffff';
-      ctx.strokeStyle = '#000000';
-      ctx.lineWidth = 3;
-      ctx.font = '12px Arial';
+      const label = this.birdData.name;
+      ctx.font = `bold 12px ${theme.font}`;
+      const tw = ctx.measureText(label).width + 16;
+      const th = 22;
+      const tx = -tw / 2;
+      const ty = -displaySize / 2 - th - 6;
+      roundRectPath(ctx, tx, ty, tw, th, 10);
+      ctx.fillStyle = 'rgba(18, 28, 24, 0.85)';
+      ctx.fill();
+      ctx.strokeStyle = accent;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = theme.text;
       ctx.textAlign = 'center';
-      ctx.strokeText(this.birdData.name, x, y - displaySize / 2 - 8);
-      ctx.fillText(this.birdData.name, x, y - displaySize / 2 - 8);
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, 0, ty + th / 2);
     }
 
     ctx.restore();

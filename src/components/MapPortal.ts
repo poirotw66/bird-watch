@@ -1,6 +1,8 @@
 import { Component } from '../core/Component';
 import { MapSystem } from '../systems/MapSystem';
 import { EventSystem } from '../core/EventSystem';
+import { inputManager } from '../core/InputManager';
+import { MapArea } from '../data/maps';
 import { Vector2 } from '../utils/Vector2';
 
 /**
@@ -13,7 +15,7 @@ export class MapPortal extends Component {
   private playerPosition: Vector2 = new Vector2(0, 0);
   private isNearPortal: boolean = false;
   private nearestPortalId: string | null = null;
-  private portalInteractionDistance: number = 50;
+  private portalInteractionDistance: number = 90;
 
   constructor() {
     super();
@@ -24,16 +26,11 @@ export class MapPortal extends Component {
   public onAttach(): void {
     super.onAttach();
 
-    // 監聽玩家位置更新
     this.eventSystem.on('player:position_update', this.onPlayerPositionUpdate.bind(this));
-
-    // 監聽互動按鍵
-    this.eventSystem.on('input:interact', this.onInteract.bind(this));
   }
 
   public onDetach(): void {
     this.eventSystem.off('player:position_update', this.onPlayerPositionUpdate.bind(this));
-    this.eventSystem.off('input:interact', this.onInteract.bind(this));
     super.onDetach();
   }
 
@@ -44,11 +41,24 @@ export class MapPortal extends Component {
     this.playerPosition = data.position;
   }
 
+  /** Sync player world position each frame (GameScene calls this). */
+  public setPlayerPosition(position: Vector2): void {
+    this.playerPosition.x = position.x;
+    this.playerPosition.y = position.y;
+  }
+
   /**
    * 更新組件
    */
   public update(_deltaTime: number): void {
     this.checkPortalProximity();
+    if (
+      inputManager.isKeyJustPressed('KeyE') &&
+      this.isNearPortal &&
+      this.nearestPortalId
+    ) {
+      this.teleportToArea(this.nearestPortalId);
+    }
   }
 
   /**
@@ -92,34 +102,59 @@ export class MapPortal extends Component {
   }
 
   /**
-   * 互動事件處理
-   */
-  private onInteract(): void {
-    if (this.isNearPortal && this.nearestPortalId) {
-      this.teleportToArea(this.nearestPortalId);
-    }
-  }
-
-  /**
    * 傳送到指定區域
    */
   private teleportToArea(areaId: string): void {
+    const fromAreaId = this.mapSystem.getCurrentArea().id;
     const success = this.mapSystem.switchToArea(areaId);
 
     if (success) {
-      // 發送傳送成功事件
       this.eventSystem.emit('portal:teleport', {
         targetAreaId: areaId,
+        fromAreaId,
       });
 
-      // 重置玩家位置到新區域的中心
       const newArea = this.mapSystem.getCurrentArea();
-      const newPosition = new Vector2(newArea.width / 2, newArea.height / 2);
+      const newPosition = this.getEntryPosition(newArea, fromAreaId);
 
       this.eventSystem.emit('player:teleport', {
         position: newPosition,
       });
+
+      this.isNearPortal = false;
+      this.nearestPortalId = null;
     }
+  }
+
+  private getEntryPosition(area: MapArea, fromAreaId: string): Vector2 {
+    const link = area.connections.find((c) => c.targetAreaId === fromAreaId);
+    if (!link) {
+      return new Vector2(area.width / 2, area.height / 2);
+    }
+
+    const offset = 60;
+    let x = link.position.x;
+    let y = link.position.y;
+    switch (link.direction) {
+      case 'east':
+        x -= offset;
+        break;
+      case 'west':
+        x += offset;
+        break;
+      case 'north':
+        y += offset;
+        break;
+      case 'south':
+        y -= offset;
+        break;
+      default:
+        break;
+    }
+    const padding = 32;
+    x = Math.max(padding, Math.min(area.width - padding, x));
+    y = Math.max(padding, Math.min(area.height - padding, y));
+    return new Vector2(x, y);
   }
 
   /**
@@ -143,20 +178,6 @@ export class MapPortal extends Component {
 
     if (!connection) return;
 
-    // 從場景取得相機
-    const camera = (this.gameObject as any).scene?.camera;
-    if (!camera) return;
-
-    const canvasWidth = ctx.canvas.width;
-    const canvasHeight = ctx.canvas.height;
-
-    const screenPos = camera.worldToScreen(
-      new Vector2(connection.position.x, connection.position.y),
-      canvasWidth,
-      canvasHeight
-    );
-
-    // 繪製提示框
     ctx.save();
 
     const hintText = '按 E 鍵傳送';
@@ -171,8 +192,8 @@ export class MapPortal extends Component {
 
     const boxWidth = hintWidth + 20;
     const boxHeight = 60;
-    const boxX = screenPos.x - boxWidth / 2;
-    const boxY = screenPos.y - 80;
+    const boxX = connection.position.x - boxWidth / 2;
+    const boxY = connection.position.y - 80;
 
     // 背景
     ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
@@ -187,11 +208,11 @@ export class MapPortal extends Component {
     ctx.fillStyle = '#FFFFFF';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(hintText, screenPos.x, boxY + 20);
+    ctx.fillText(hintText, boxX + boxWidth / 2, boxY + 20);
 
     ctx.font = '14px Arial';
     ctx.fillStyle = '#FFD700';
-    ctx.fillText(targetText, screenPos.x, boxY + 40);
+    ctx.fillText(targetText, boxX + boxWidth / 2, boxY + 40);
 
     ctx.restore();
   }

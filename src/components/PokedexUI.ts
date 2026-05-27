@@ -4,6 +4,7 @@ import { InputManager } from '../core/InputManager';
 import { BirdData } from '../models/BirdData';
 import { birdImageLoader } from '../utils/birdImageLoader';
 import { getTaiwanBirdById } from '../data/taiwanBirdCatalog';
+import { getViewport } from '../utils/viewport';
 
 /**
  * 圖鑑 UI 組件
@@ -105,26 +106,28 @@ export class PokedexUI extends Component {
       return;
     }
 
-    // 半透明背景
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    const { width: vw, height: vh } = getViewport(ctx);
+    const panelWidth = Math.min(this.panelWidth, vw - 40);
+    const panelHeight = Math.min(this.panelHeight, vh - 40);
 
-    // 計算面板位置（置中）
-    const x = (ctx.canvas.width - this.panelWidth) / 2;
-    const y = (ctx.canvas.height - this.panelHeight) / 2;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, vw, vh);
+
+    const x = (vw - panelWidth) / 2;
+    const y = (vh - panelHeight) / 2;
 
     // 繪製面板背景
     ctx.fillStyle = 'rgba(40, 40, 40, 0.95)';
-    ctx.fillRect(x, y, this.panelWidth, this.panelHeight);
+    ctx.fillRect(x, y, panelWidth, panelHeight);
     ctx.strokeStyle = '#4a9eff';
     ctx.lineWidth = 3;
-    ctx.strokeRect(x, y, this.panelWidth, this.panelHeight);
+    ctx.strokeRect(x, y, panelWidth, panelHeight);
 
     // 標題
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('🦜 鳥類圖鑑', x + this.panelWidth / 2, y + 35);
+    ctx.fillText('🦜 鳥類圖鑑', x + panelWidth / 2, y + 35);
 
     // 統計資訊
     const stats = this.pokedexSystem.getStats();
@@ -132,7 +135,7 @@ export class PokedexUI extends Component {
     ctx.fillStyle = '#aaaaaa';
     ctx.fillText(
       `已解鎖：${stats.unlocked} / ${stats.total} (${stats.completionRate.toFixed(1)}%)`,
-      x + this.panelWidth / 2,
+      x + panelWidth / 2,
       y + 60
     );
 
@@ -141,7 +144,7 @@ export class PokedexUI extends Component {
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(x + this.padding, y + 75);
-    ctx.lineTo(x + this.panelWidth - this.padding, y + 75);
+    ctx.lineTo(x + panelWidth - this.padding, y + 75);
     ctx.stroke();
 
     // 鳥類列表
@@ -157,17 +160,8 @@ export class PokedexUI extends Component {
   /**
    * 渲染提示
    */
-  private renderHint(ctx: CanvasRenderingContext2D): void {
-    const stats = this.pokedexSystem.getStats();
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(10, ctx.canvas.height - 50, 200, 40);
-    
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '14px Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText('按 P 開啟圖鑑', 20, ctx.canvas.height - 30);
-    ctx.fillStyle = '#4a9eff';
-    ctx.fillText(`${stats.unlocked}/${stats.total} 已解鎖`, 20, ctx.canvas.height - 15);
+  private renderHint(_ctx: CanvasRenderingContext2D): void {
+    // Compact hint is drawn by GameScene HUD bar; avoid overlapping UI.
   }
 
   /**

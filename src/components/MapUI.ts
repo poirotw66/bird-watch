@@ -2,6 +2,9 @@ import { Component } from '../core/Component';
 import { MapSystem } from '../systems/MapSystem';
 import { EventSystem } from '../core/EventSystem';
 import { MAP_AREAS } from '../data/maps';
+import { getViewport } from '../utils/viewport';
+import { drawPanel, roundRectPath } from '../utils/canvasUi';
+import { theme } from '../utils/uiTheme';
 
 /**
  * 地圖 UI 組件
@@ -74,81 +77,53 @@ export class MapUI extends Component {
    * 渲染小地圖
    */
   private renderMiniMap(ctx: CanvasRenderingContext2D): void {
-    const x = ctx.canvas.width - this.miniMapSize - this.miniMapPadding;
-    const y = this.miniMapPadding;
+    const { width: vw, height: vh } = getViewport(ctx);
+    const boxW = this.miniMapSize;
+    const boxH = this.miniMapSize + 36;
+    const x = vw - boxW - this.miniMapPadding;
+    const y = vh - boxH - 64;
 
-    ctx.save();
-
-    // 背景
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(x, y, this.miniMapSize, this.miniMapSize);
-
-    // 邊框
-    ctx.strokeStyle = '#FFD700';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x, y, this.miniMapSize, this.miniMapSize);
-
-    // 繪製區域
     const currentArea = this.mapSystem.getCurrentArea();
-    const scale = this.miniMapSize / Math.max(currentArea.width, currentArea.height);
+    const innerX = x + 8;
+    const innerY = y + 44;
+    const innerSize = boxW - 16;
+    const scale = innerSize / Math.max(currentArea.width, currentArea.height);
 
-    // 當前區域
+    drawPanel(ctx, x, y, boxW, boxH, { title: currentArea.name });
+
     ctx.fillStyle = currentArea.groundColor;
-    ctx.globalAlpha = 0.5;
-    ctx.fillRect(
-      x + 5,
-      y + 5,
-      this.miniMapSize - 10,
-      this.miniMapSize - 10
-    );
-    ctx.globalAlpha = 1;
+    roundRectPath(ctx, innerX, innerY, innerSize, innerSize, 8);
+    ctx.fill();
 
-    // 玩家位置（從場景取得）
-    const playerPos = (this.gameObject as any).scene?.player?.transform?.position;
-    if (playerPos) {
-      const playerX = x + (playerPos.x * scale);
-      const playerY = y + (playerPos.y * scale);
-
-      ctx.fillStyle = '#00FF00';
-      ctx.beginPath();
-      ctx.arc(playerX, playerY, 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // 連接點
     currentArea.connections.forEach((conn) => {
-      const connX = x + (conn.position.x * scale);
-      const connY = y + (conn.position.y * scale);
-
-      ctx.fillStyle = '#FFD700';
+      const connX = innerX + conn.position.x * scale;
+      const connY = innerY + conn.position.y * scale;
+      ctx.fillStyle = theme.accentWarm;
       ctx.beginPath();
-      ctx.arc(connX, connY, 2, 0, Math.PI * 2);
+      ctx.arc(connX, connY, 3, 0, Math.PI * 2);
       ctx.fill();
     });
 
-    // 提示文字
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '10px Arial';
+    ctx.fillStyle = theme.textMuted;
+    ctx.font = `11px ${theme.font}`;
     ctx.textAlign = 'center';
-    ctx.fillText('按 M 開啟地圖', x + this.miniMapSize / 2, y + this.miniMapSize + 15);
-
-    ctx.restore();
+    ctx.fillText('M 世界地圖', x + boxW / 2, y + boxH - 10);
   }
 
   /**
    * 渲染完整地圖
    */
   private renderFullMap(ctx: CanvasRenderingContext2D): void {
-    const width = ctx.canvas.width * 0.8;
-    const height = ctx.canvas.height * 0.8;
-    const x = (ctx.canvas.width - width) / 2;
-    const y = (ctx.canvas.height - height) / 2;
+    const { width: vw, height: vh } = getViewport(ctx);
+    const width = vw * 0.8;
+    const height = vh * 0.8;
+    const x = (vw - width) / 2;
+    const y = (vh - height) / 2;
 
     ctx.save();
 
-    // 半透明背景
     ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
-    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.fillRect(0, 0, vw, vh);
 
     // 地圖背景
     ctx.fillStyle = 'rgba(40, 40, 40, 0.95)';
@@ -163,7 +138,7 @@ export class MapUI extends Component {
     ctx.fillStyle = '#FFD700';
     ctx.font = 'bold 24px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('世界地圖', ctx.canvas.width / 2, y + 40);
+    ctx.fillText('世界地圖', vw / 2, y + 40);
 
     // 繪製所有區域
     const gridCols = 3;
@@ -204,7 +179,7 @@ export class MapUI extends Component {
     // 關閉提示
     ctx.textAlign = 'center';
     ctx.fillStyle = '#FFD700';
-    ctx.fillText('按 M 或 ESC 關閉', ctx.canvas.width / 2, y + height - 20);
+    ctx.fillText('按 M 或 ESC 關閉', vw / 2, y + height - 20);
 
     ctx.restore();
   }
@@ -303,39 +278,32 @@ export class MapUI extends Component {
     if (this.isMapOpen) return; // 完整地圖開啟時不顯示
 
     const currentArea = this.mapSystem.getCurrentArea();
-    const x = 10;
-    const y = 10;
-
-    ctx.save();
-
-    // 背景
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(x, y, 250, 80);
-
-    // 邊框
-    ctx.strokeStyle = '#FFD700';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(x, y, 250, 80);
-
-    // 區域名稱
-    ctx.fillStyle = '#FFD700';
-    ctx.font = 'bold 18px Arial';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText(currentArea.name, x + 10, y + 10);
-
-    // 英文名稱
-    ctx.font = '14px Arial';
-    ctx.fillStyle = '#CCCCCC';
-    ctx.fillText(currentArea.nameEn, x + 10, y + 35);
-
-    // 探索進度
+    const x = 12;
+    const y = 210;
+    const w = 260;
+    const h = 88;
     const progress = this.mapSystem.getExplorationProgress(currentArea.id);
-    ctx.fillStyle = '#FFFFFF';
-    ctx.font = '12px Arial';
-    ctx.fillText(`探索進度：${progress.toFixed(1)}%`, x + 10, y + 60);
 
-    ctx.restore();
+    drawPanel(ctx, x, y, w, h);
+    ctx.fillStyle = theme.text;
+    ctx.font = `bold 16px ${theme.font}`;
+    ctx.textAlign = 'left';
+    ctx.fillText(currentArea.name, x + 14, y + 18);
+    ctx.fillStyle = theme.textMuted;
+    ctx.font = `12px ${theme.font}`;
+    ctx.fillText(currentArea.nameEn, x + 14, y + 38);
+    const barX = x + 14;
+    const barY = y + 58;
+    const barW = w - 28;
+    roundRectPath(ctx, barX, barY, barW, 8, 4);
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    ctx.fill();
+    ctx.fillStyle = theme.accent;
+    roundRectPath(ctx, barX, barY, barW * (progress / 100), 8, 4);
+    ctx.fill();
+    ctx.fillStyle = theme.text;
+    ctx.font = `12px ${theme.font}`;
+    ctx.fillText(`探索 ${progress.toFixed(0)}%`, x + 14, y + 74);
   }
 }
 

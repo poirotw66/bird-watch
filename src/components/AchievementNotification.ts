@@ -1,4 +1,5 @@
 import { Component } from '../core/Component';
+import { getViewport } from '../utils/viewport';
 import { AchievementSystem } from '../systems/AchievementSystem';
 import { EventSystem, GameEvents } from '../core/EventSystem';
 
@@ -138,7 +139,8 @@ export class AchievementNotification extends Component {
     if (this.notifications.length === 0) return;
 
     const now = Date.now();
-    const x = ctx.canvas.width - this.notificationWidth - this.padding;
+    const { width: vw } = getViewport(ctx);
+    const x = vw - this.notificationWidth - this.padding;
     let y = 200; // 從上方 200px 開始
 
     for (const notification of this.notifications) {
