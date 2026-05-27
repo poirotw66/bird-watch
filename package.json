@@ -1,0 +1,41 @@
+{
+  "name": "bird-watch-game",
+  "version": "0.1.0",
+  "description": "賞鳥探索冒險遊戲 - 基於神經科學研究的認知訓練遊戲",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,css}\"",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "game",
+    "birdwatching",
+    "cognitive-training",
+    "typescript",
+    "canvas"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "eslint": "^8.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "dependencies": {
+    "sharp": "^0.34.5"
+  }
+}

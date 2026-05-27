@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="賞鳥探索冒險遊戲 - 基於神經科學研究的認知訓練遊戲">
+  <meta name="keywords" content="賞鳥,遊戲,認知訓練,台灣鳥類">
+  <title>賞鳥探索冒險</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+      background: #1a1a2e;
+    }
+    
+    #game-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #1a1a2e;
+      overflow: hidden;
+    }
+    
+    #game-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      image-rendering: auto;
+    }
+    
+    #loading {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #1a1a2e;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      z-index: 1000;
+    }
+    
+    #loading.hidden {
+      display: none;
+    }
+    
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    
+    .loading-progress {
+      width: 200px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    
+    .loading-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* 全屏按鈕 */
+    #fullscreen-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      background: rgba(102, 126, 234, 0.9);
+      border: none;
+      border-radius: 50%;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    #fullscreen-btn:hover {
+      background: rgba(102, 126, 234, 1);
+      transform: scale(1.1);
+    }
+
+    #fullscreen-btn:active {
+      transform: scale(0.95);
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game-canvas"></canvas>
+    <div id="loading">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">載入中...</div>
+      <div class="loading-progress">
+        <div class="loading-progress-bar" id="progress-bar"></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 全屏按鈕 -->
+  <button id="fullscreen-btn" title="切換全屏 (F)">⛶</button>
+
+  <script type="module" src="/src/main.ts"></script>
+  
+  <script>
+    // 全屏功能
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    const gameContainer = document.getElementById('game-container');
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        gameContainer.requestFullscreen().catch(err => {
+          console.error('無法進入全屏模式:', err);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    // 按鈕點擊
+    fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+    // 鍵盤快捷鍵 F
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        toggleFullscreen();
+      }
+    });
+
+    // 更新按鈕圖示
+    document.addEventListener('fullscreenchange', () => {
+      if (document.fullscreenElement) {
+        fullscreenBtn.textContent = '⛶'; // 退出全屏圖示
+        fullscreenBtn.title = '退出全屏 (F)';
+      } else {
+        fullscreenBtn.textContent = '⛶'; // 進入全屏圖示
+        fullscreenBtn.title = '切換全屏 (F)';
+      }
+    });
+  </script>
+</body>
+</html>

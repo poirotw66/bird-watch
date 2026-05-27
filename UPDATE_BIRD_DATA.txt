@@ -1,0 +1,118 @@
+
+/**
+ * 更新鳥類資料中的圖片路徑
+ * 
+ * 在 src/data/extendedBirds.ts 中，為每個鳥類加入以下結構：
+ * 
+ * gameData: {
+ *   // ... 其他設定
+ *   sprite: {
+ *     idle: '/images/birds/medium/鳥類ID.webp',
+ *     flying: '/images/birds/medium/鳥類ID.webp',
+ *     thumbnail: '/images/birds/thumbnail/鳥類ID.webp',
+ *     large: '/images/birds/large/鳥類ID.webp',
+ *   }
+ * }
+ * 
+ * 可用的圖片：
+ */
+
+// black-bulbul
+//   medium: '/images/birds/medium/black-bulbul.webp'
+//   thumbnail: '/images/birds/thumbnail/black-bulbul.webp'
+//   large: '/images/birds/large/black-bulbul.webp'
+
+// black-naped-monarch
+//   medium: '/images/birds/medium/black-naped-monarch.webp'
+//   thumbnail: '/images/birds/thumbnail/black-naped-monarch.webp'
+//   large: '/images/birds/large/black-naped-monarch.webp'
+
+// black-necklaced-scimitar-babbler
+//   medium: '/images/birds/medium/black-necklaced-scimitar-babbler.webp'
+//   thumbnail: '/images/birds/thumbnail/black-necklaced-scimitar-babbler.webp'
+//   large: '/images/birds/large/black-necklaced-scimitar-babbler.webp'
+
+// black-throated-tit
+//   medium: '/images/birds/medium/black-throated-tit.webp'
+//   thumbnail: '/images/birds/thumbnail/black-throated-tit.webp'
+//   large: '/images/birds/large/black-throated-tit.webp'
+
+// chinese-bulbul
+//   medium: '/images/birds/medium/chinese-bulbul.webp'
+//   thumbnail: '/images/birds/thumbnail/chinese-bulbul.webp'
+//   large: '/images/birds/large/chinese-bulbul.webp'
+
+// collared-bush-robin
+//   medium: '/images/birds/medium/collared-bush-robin.webp'
+//   thumbnail: '/images/birds/thumbnail/collared-bush-robin.webp'
+//   large: '/images/birds/large/collared-bush-robin.webp'
+
+// crested-serpent-eagle
+//   medium: '/images/birds/medium/crested-serpent-eagle.webp'
+//   thumbnail: '/images/birds/thumbnail/crested-serpent-eagle.webp'
+//   large: '/images/birds/large/crested-serpent-eagle.webp'
+
+// flamecrest
+//   medium: '/images/birds/medium/flamecrest.webp'
+//   thumbnail: '/images/birds/thumbnail/flamecrest.webp'
+//   large: '/images/birds/large/flamecrest.webp'
+
+// green-backed-tit
+//   medium: '/images/birds/medium/green-backed-tit.webp'
+//   thumbnail: '/images/birds/thumbnail/green-backed-tit.webp'
+//   large: '/images/birds/large/green-backed-tit.webp'
+
+// grey-capped-pygmy-woodpecker
+//   medium: '/images/birds/medium/grey-capped-pygmy-woodpecker.webp'
+//   thumbnail: '/images/birds/thumbnail/grey-capped-pygmy-woodpecker.webp'
+//   large: '/images/birds/large/grey-capped-pygmy-woodpecker.webp'
+
+// japanese-white-eye
+//   medium: '/images/birds/medium/japanese-white-eye.webp'
+//   thumbnail: '/images/birds/thumbnail/japanese-white-eye.webp'
+//   large: '/images/birds/large/japanese-white-eye.webp'
+
+// mullers-barbet
+//   medium: '/images/birds/medium/mullers-barbet.webp'
+//   thumbnail: '/images/birds/thumbnail/mullers-barbet.webp'
+//   large: '/images/birds/large/mullers-barbet.webp'
+
+// rufous-capped-babbler
+//   medium: '/images/birds/medium/rufous-capped-babbler.webp'
+//   thumbnail: '/images/birds/thumbnail/rufous-capped-babbler.webp'
+//   large: '/images/birds/large/rufous-capped-babbler.webp'
+
+// rufous-faced-warbler
+//   medium: '/images/birds/medium/rufous-faced-warbler.webp'
+//   thumbnail: '/images/birds/thumbnail/rufous-faced-warbler.webp'
+//   large: '/images/birds/large/rufous-faced-warbler.webp'
+
+// taiwan-blue-magpie
+//   medium: '/images/birds/medium/taiwan-blue-magpie.webp'
+//   thumbnail: '/images/birds/thumbnail/taiwan-blue-magpie.webp'
+//   large: '/images/birds/large/taiwan-blue-magpie.webp'
+
+// taiwan-hwamei
+//   medium: '/images/birds/medium/taiwan-hwamei.webp'
+//   thumbnail: '/images/birds/thumbnail/taiwan-hwamei.webp'
+//   large: '/images/birds/large/taiwan-hwamei.webp'
+
+// taiwan-scimitar-babbler
+//   medium: '/images/birds/medium/taiwan-scimitar-babbler.webp'
+//   thumbnail: '/images/birds/thumbnail/taiwan-scimitar-babbler.webp'
+//   large: '/images/birds/large/taiwan-scimitar-babbler.webp'
+
+// taiwan-yuhina
+//   medium: '/images/birds/medium/taiwan-yuhina.webp'
+//   thumbnail: '/images/birds/thumbnail/taiwan-yuhina.webp'
+//   large: '/images/birds/large/taiwan-yuhina.webp'
+
+// white-eared-sibia
+//   medium: '/images/birds/medium/white-eared-sibia.webp'
+//   thumbnail: '/images/birds/thumbnail/white-eared-sibia.webp'
+//   large: '/images/birds/large/white-eared-sibia.webp'
+
+// yellow-tit
+//   medium: '/images/birds/medium/yellow-tit.webp'
+//   thumbnail: '/images/birds/thumbnail/yellow-tit.webp'
+//   large: '/images/birds/large/yellow-tit.webp'
