@@ -17,6 +17,16 @@ export class HomeScene extends Scene {
   ];
 
   private selectedIndex: number = 0;
+  private mouseWasDown: boolean = false;
+  private panelLayout: {
+    panelX: number;
+    panelY: number;
+    panelW: number;
+    rowX: number;
+    rowW: number;
+    rowY: number;
+    rowH: number;
+  } | null = null;
 
   constructor() {
     super('HomeScene');
@@ -24,6 +34,8 @@ export class HomeScene extends Scene {
 
   public onEnter(): void {
     this.selectedIndex = 0;
+    this.panelLayout = null;
+    this.mouseWasDown = false;
   }
 
   public onExit(): void {
@@ -54,14 +66,40 @@ export class HomeScene extends Scene {
     }
 
     this.handleConfirm();
+    this.handlePointerConfirm();
+  }
+
+  private isConfirmJustPressed(): boolean {
+    return (
+      inputManager.isKeyJustPressed('Enter') ||
+      inputManager.isKeyJustPressed('NumpadEnter') ||
+      inputManager.isKeyJustPressed('Space')
+    );
   }
 
   private handleConfirm(): void {
-    if (!inputManager.isKeyJustPressed('Enter')) return;
+    if (!this.isConfirmJustPressed()) return;
+    this.startSelectedMode();
+  }
+
+  private handlePointerConfirm(): void {
+    const mouseDown = inputManager.isMouseButtonDown(0);
+    const justClicked = mouseDown && !this.mouseWasDown;
+    this.mouseWasDown = mouseDown;
+
+    if (!justClicked || !this.panelLayout) return;
+
+    const { x, y } = inputManager.getMousePosition();
+    const { rowX, rowY, rowW, rowH } = this.panelLayout;
+    if (x < rowX || x > rowX + rowW || y < rowY || y > rowY + rowH) return;
+
+    this.startSelectedMode();
+  }
+
+  private startSelectedMode(): void {
     const selectedMode = this.modes[this.selectedIndex];
     if (!selectedMode) return;
 
-    // Mode ID is currently informational; GameScene will start the existing gameplay flow.
     eventBus.emit(GameEvents.SCENE_LOAD_REQUEST, { scene: new GameScene() });
   }
 
@@ -92,7 +130,7 @@ export class HomeScene extends Scene {
 
     // Mode list
     const contentX = panelX + 16;
-    let contentY = panelY + 70;
+    const contentY = panelY + 70;
     const rowH = 54;
 
     ctx.textAlign = 'left';
@@ -104,6 +142,18 @@ export class HomeScene extends Scene {
       const rowX = contentX;
       const rowW = panelW - 32;
       const rowY = contentY + i * (rowH + 10);
+
+      if (i === this.selectedIndex) {
+        this.panelLayout = {
+          panelX,
+          panelY,
+          panelW,
+          rowX,
+          rowW,
+          rowY,
+          rowH,
+        };
+      }
 
       ctx.save();
       roundRectPath(ctx, rowX, rowY, rowW, rowH, 12);
@@ -138,8 +188,8 @@ export class HomeScene extends Scene {
     const hintY = panelY + panelH - 46;
     const keysHint =
       this.modes.length > 1
-        ? '使用方向鍵 / W S 選擇，按 Enter 開始'
-        : '按 Enter 開始';
+        ? '方向鍵 / W S 選擇 · Enter 或空白鍵開始 · 可點選模式列'
+        : 'Enter、空白鍵開始，或點選「生態探索」';
     ctx.fillText(keysHint, vw / 2, hintY);
   }
 }

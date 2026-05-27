@@ -196,13 +196,14 @@ export class Engine {
    * @param deltaTime 距離上次更新的時間（秒）
    */
   private update(deltaTime: number): void {
-    // 更新輸入管理器
-    inputManager.update();
+    // Emit and read "just pressed" before advancing previous-key state.
     inputManager.emitInputEvents();
 
     if (this.currentScene) {
       this.currentScene.update(deltaTime);
     }
+
+    inputManager.update();
   }
 
   /**
