@@ -5,6 +5,7 @@ import { theme } from '@/utils/uiTheme';
 import { inputManager } from '@/core/InputManager';
 import { eventBus, GameEvents } from '@/core/EventSystem';
 import { GameScene } from '@/scenes/GameScene';
+import { BirdQuizScene } from '@/scenes/BirdQuizScene';
 
 type GameMode = {
   id: string;
@@ -14,6 +15,7 @@ type GameMode = {
 export class HomeScene extends Scene {
   private modes: GameMode[] = [
     { id: 'ecology_explore', name: '生態探索' },
+    { id: 'bird_quiz', name: '問答模式' },
   ];
 
   private selectedIndex: number = 0;
@@ -99,6 +101,11 @@ export class HomeScene extends Scene {
   private startSelectedMode(): void {
     const selectedMode = this.modes[this.selectedIndex];
     if (!selectedMode) return;
+
+    if (selectedMode.id === 'bird_quiz') {
+      eventBus.emit(GameEvents.SCENE_LOAD_REQUEST, { scene: new BirdQuizScene() });
+      return;
+    }
 
     eventBus.emit(GameEvents.SCENE_LOAD_REQUEST, { scene: new GameScene() });
   }
