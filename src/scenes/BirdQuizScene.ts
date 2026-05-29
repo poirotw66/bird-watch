@@ -3,6 +3,7 @@ import { inputManager } from '@/core/InputManager';
 import { eventBus, GameEvents } from '@/core/EventSystem';
 import { TAIWAN_BIRD_CATALOG } from '@/data/taiwanBirdCatalog';
 import { birdImageLoader } from '@/utils/birdImageLoader';
+import { birdCallLoader } from '@/utils/birdCallLoader';
 import { getViewport } from '@/utils/viewport';
 import { drawPanel, roundRectPath } from '@/utils/canvasUi';
 import { theme } from '@/utils/uiTheme';
@@ -93,8 +94,11 @@ export class BirdQuizScene extends Scene {
 
   private audioContext: AudioContext | null = null;
   private htmlAudio: HTMLAudioElement | null = null;
+  private currentCallPath: string | null = null;
   private audioAvailability = new Map<string, boolean>();
   private leaderboardRecords: LeaderboardRecord[] = [];
+  /** Correct-answer birds already used this round (no repeat questions). */
+  private usedCorrectBirdIds = new Set<string>();
 
   constructor() {
     super('BirdQuizScene');
@@ -120,24 +124,19 @@ export class BirdQuizScene extends Scene {
     this.question = null;
     this.optionRects = [];
     this.soundButtonRect = null;
+    this.usedCorrectBirdIds.clear();
   }
 
   public onExit(): void {
     this.clear();
-    if (this.htmlAudio) {
-      this.htmlAudio.pause();
-      this.htmlAudio = null;
-    }
-    if (this.audioContext) {
-      void this.audioContext.close();
-      this.audioContext = null;
-    }
+    this.stopBirdCallPlayback();
   }
 
   public update(deltaTime: number): void {
     super.update(deltaTime);
 
     if (inputManager.isKeyJustPressed('Escape')) {
+      this.stopBirdCallPlayback();
       eventBus.emit(GameEvents.SCENE_LOAD_REQUEST, { scene: new HomeScene() });
       return;
     }
@@ -293,6 +292,7 @@ export class BirdQuizScene extends Scene {
   }
 
   private advanceQuestion(): void {
+    this.stopBirdCallPlayback();
     this.currentQuestionIndex += 1;
     this.selectedIndex = null;
     this.showingResult = false;
@@ -316,9 +316,19 @@ export class BirdQuizScene extends Scene {
     this.generateQuestion();
   }
 
+  private pickCorrectBirdForQuestion(): SimpleBirdData {
+    let pool = TAIWAN_BIRD_CATALOG.filter((bird) => !this.usedCorrectBirdIds.has(bird.id));
+    if (pool.length === 0) {
+      this.usedCorrectBirdIds.clear();
+      pool = [...TAIWAN_BIRD_CATALOG];
+    }
+    const correctBird = pool[Math.floor(Math.random() * pool.length)];
+    this.usedCorrectBirdIds.add(correctBird.id);
+    return correctBird;
+  }
+
   private generateQuestion(): void {
-    const correctBird =
-      TAIWAN_BIRD_CATALOG[Math.floor(Math.random() * TAIWAN_BIRD_CATALOG.length)];
+    const correctBird = this.pickCorrectBirdForQuestion();
     const distractors = TAIWAN_BIRD_CATALOG
       .filter((bird) => bird.id !== correctBird.id)
       .sort(() => Math.random() - 0.5)
@@ -338,8 +348,26 @@ export class BirdQuizScene extends Scene {
     return this.audioContext;
   }
 
+  private stopBirdCallPlayback(): void {
+    if (this.htmlAudio) {
+      this.htmlAudio.pause();
+      this.htmlAudio.currentTime = 0;
+      this.htmlAudio.src = '';
+      this.htmlAudio = null;
+      this.currentCallPath = null;
+    }
+    if (this.audioContext) {
+      void this.audioContext.close();
+      this.audioContext = null;
+    }
+  }
+
   private playBirdCall(bird: SimpleBirdData): void {
-    const birdCallPath = this.getBirdCallPath(bird.id);
+    const birdCallPath = birdCallLoader.getCallPath(bird.id);
+    if (!birdCallPath) {
+      this.playSyntheticBirdCall(bird);
+      return;
+    }
     const knownAvailability = this.audioAvailability.get(bird.id);
     if (knownAvailability !== false) {
       this.playBirdCallAudioFile(bird.id, birdCallPath, bird);
@@ -354,9 +382,10 @@ export class BirdQuizScene extends Scene {
     filePath: string,
     bird: SimpleBirdData,
   ): void {
-    if (this.htmlAudio?.src !== `${window.location.origin}${filePath}`) {
+    if (!this.htmlAudio || this.currentCallPath !== filePath) {
       this.htmlAudio = new Audio(filePath);
       this.htmlAudio.preload = 'auto';
+      this.currentCallPath = filePath;
     }
     const audio = this.htmlAudio;
 
@@ -402,10 +431,6 @@ export class BirdQuizScene extends Scene {
       oscillator.start(start);
       oscillator.stop(end);
     }
-  }
-
-  private getBirdCallPath(birdId: string): string {
-    return `/audio/bird-calls/${birdId}.mp3`;
   }
 
   private hashBirdId(value: string): number {

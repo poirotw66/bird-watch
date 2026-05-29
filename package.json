@@ -11,7 +11,9 @@
     "test:coverage": "vitest --coverage",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,css}\"",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "fetch:bird-calls": "node scripts/fetch-wikimedia-bird-calls.cjs",
+    "discover:bird-calls": "node scripts/bird-call-discover.cjs"
   },
   "keywords": [
     "game",

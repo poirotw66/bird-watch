@@ -1,0 +1,105 @@
+{
+  "generatedAt": "2026-05-29T04:08:17.245Z",
+  "calls": [
+    {
+      "id": "mullers-barbet",
+      "path": "/audio/bird-calls/mullers-barbet.wav",
+      "ext": "wav"
+    },
+    {
+      "id": "taiwan-blue-magpie",
+      "path": "/audio/bird-calls/taiwan-blue-magpie.wav",
+      "ext": "wav"
+    },
+    {
+      "id": "black-naped-monarch",
+      "path": "/audio/bird-calls/black-naped-monarch.wav",
+      "ext": "wav"
+    },
+    {
+      "id": "black-bulbul",
+      "path": "/audio/bird-calls/black-bulbul.wav",
+      "ext": "wav"
+    },
+    {
+      "id": "chinese-bulbul",
+      "path": "/audio/bird-calls/chinese-bulbul.mp3",
+      "ext": "mp3"
+    },
+    {
+      "id": "japanese-white-eye",
+      "path": "/audio/bird-calls/japanese-white-eye.wav",
+      "ext": "wav"
+    },
+    {
+      "id": "taiwan-scimitar-babbler",
+      "path": "/audio/bird-calls/taiwan-scimitar-babbler.wav",
+      "ext": "wav"
+    },
+    {
+      "id": "black-necklaced-scimitar-babbler",
+      "path": "/audio/bird-calls/black-necklaced-scimitar-babbler.wav",
+      "ext": "wav"
+    },
+    {
+      "id": "rufous-capped-babbler",
+      "path": "/audio/bird-calls/rufous-capped-babbler.wav",
+      "ext": "wav"
+    },
+    {
+      "id": "taiwan-yuhina",
+      "path": "/audio/bird-calls/taiwan-yuhina.wav",
+      "ext": "wav"
+    },
+    {
+      "id": "white-eared-sibia",
+      "path": "/audio/bird-calls/white-eared-sibia.wav",
+      "ext": "wav"
+    },
+    {
+      "id": "black-throated-tit",
+      "path": "/audio/bird-calls/black-throated-tit.wav",
+      "ext": "wav"
+    },
+    {
+      "id": "green-backed-tit",
+      "path": "/audio/bird-calls/green-backed-tit.wav",
+      "ext": "wav"
+    },
+    {
+      "id": "rufous-faced-warbler",
+      "path": "/audio/bird-calls/rufous-faced-warbler.wav",
+      "ext": "wav"
+    },
+    {
+      "id": "yellow-tit",
+      "path": "/audio/bird-calls/yellow-tit.wav",
+      "ext": "wav"
+    },
+    {
+      "id": "flamecrest",
+      "path": "/audio/bird-calls/flamecrest.wav",
+      "ext": "wav"
+    },
+    {
+      "id": "taiwan-hwamei",
+      "path": "/audio/bird-calls/taiwan-hwamei.wav",
+      "ext": "wav"
+    },
+    {
+      "id": "grey-capped-pygmy-woodpecker",
+      "path": "/audio/bird-calls/grey-capped-pygmy-woodpecker.wav",
+      "ext": "wav"
+    },
+    {
+      "id": "crested-serpent-eagle",
+      "path": "/audio/bird-calls/crested-serpent-eagle.wav",
+      "ext": "wav"
+    },
+    {
+      "id": "collared-bush-robin",
+      "path": "/audio/bird-calls/collared-bush-robin.wav",
+      "ext": "wav"
+    }
+  ]
+}

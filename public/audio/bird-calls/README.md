@@ -1,10 +1,27 @@
-Put real bird call audio files in this folder.
+# Bird call audio (open license)
 
-Filename rule:
-- `<bird-id>.mp3`
-- Example: `mullers-barbet.mp3`, `taiwan-blue-magpie.mp3`
+All 20 roster species can be fetched automatically:
 
-The quiz mode will automatically try to play:
-- `/audio/bird-calls/<bird-id>.mp3`
+```bash
+npm run fetch:bird-calls
+```
 
-If a file is missing or cannot be played, the game falls back to synthetic bird calls.
+Sources (in order):
+
+1. **Wikimedia Commons** curated map (`scripts/bird-call-commons-curated.json`)
+2. **iNaturalist** CC BY / CC BY-SA / CC0 sound observations
+3. Optional Commons search fallback
+
+Optional: refresh Commons title map (slow, rate-limited):
+
+```bash
+npm run discover:bird-calls
+```
+
+Outputs:
+
+- `public/audio/bird-calls/*.{mp3,wav}`
+- `manifest.json` (game loader)
+- `src/data/birdCallCredits.ts` (attribution)
+
+Licenses exclude NC/ND. See credits file for artist and observation links.

@@ -4,6 +4,7 @@ import { HomeScene } from '@/scenes/HomeScene';
 import { eventBus, GameEvents } from '@/core/EventSystem';
 import { GameState } from '@/core/GameState';
 import { birdImageLoader } from '@/utils/birdImageLoader';
+import { birdCallLoader } from '@/utils/birdCallLoader';
 
 /**
  * 遊戲主程式
@@ -97,6 +98,7 @@ class Game {
   private async loadAssets(): Promise<void> {
     await birdImageLoader.loadManifest();
     await birdImageLoader.preloadAll();
+    await birdCallLoader.loadManifest();
   }
 
   /**
